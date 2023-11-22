@@ -38,15 +38,34 @@ def setup_clear_ml(cfg):
     if clear_ml_cfg and clear_ml_cfg.get("enable"):
         from clearml import Task
 
-        task = Task.init(
-            project_name=cfg["project"], task_name=cfg["experiment_name"]
-        )
-        setup_agent(task, clear_ml_cfg)
-        global TASK
-        TASK = task
-        task.connect(OmegaConf.to_container(cfg, resolve=True))
-        return task
+        if clear_ml_cfg["queue"]:
+            # task = Task.create(project_name='example',
+            #                    task_name='task template',
+            #                    repo='https://github.com/InnopolisUni/innofw.git',
+            #                    branch='main',
+            #                    script='train.py',
+            #                    working_directory='.',
+            #                    argparse_args=[("experiments", cfg.experiment_name)],
+            #                    docker=None,)
+            # setup_agent(task, clear_ml_cfg)
+            import pathlib
+            cdir = pathlib.Path(__file__).parent.parent.parent.resolve()
 
+            cmd = f"clearml-task --project {cfg['project']} --name {cfg['experiment_name']} --script /train.py --repo https://github.com/BarzaH/innofw.git --branch main --requirements /reqs.txt --args experiments={cfg.experiment_name} --queue {clear_ml_cfg['queue']}"
+            os.system(cmd)
+            # task = Task.get_task(project_name=cfg["project"], task_name=cfg["experiment_name"])
+            # task.connect(OmegaConf.to_container(cfg, resolve=True))
+            import sys
+            sys.exit(0)
+        else:
+            task = Task.init(
+                project_name=cfg["project"], task_name=cfg["experiment_name"]
+            )
+            task.connect(OmegaConf.to_container(cfg, resolve=True))
+            global TASK
+            TASK = task
+
+        return task
 
 def setup_agent(task, cfg):
     if cfg["queue"]:
